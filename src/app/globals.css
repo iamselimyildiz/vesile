@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #FDFCF8;
+  --color-cream-dark: #F5F0E8;
+  --color-night: #1A2A40;
+  --color-night-light: #2A3A50;
+  --color-gold: #C5A059;
+  --color-gold-light: #D4B76A;
+  --color-gold-dark: #A88A45;
+  --color-muted: #9E9E9E;
+  --color-muted-light: #E0E0E0;
+
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-night);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted-light);
+  border-radius: 2px;
+}
+
+/* Mobile viewport fix */
+@supports (height: 100dvh) {
+  .h-screen-safe {
+    height: 100dvh;
+  }
+}
+
+/* Filter panel animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
