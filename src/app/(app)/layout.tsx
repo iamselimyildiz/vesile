@@ -1,4 +1,7 @@
+"use client";
+
 import BottomNav from "@/components/layout/BottomNav";
+import { ModeProvider } from "@/lib/mode-store";
 
 export default function AppLayout({
   children,
@@ -6,9 +9,11 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen pb-20">
-      {children}
-      <BottomNav />
-    </div>
+    <ModeProvider>
+      <div className="min-h-screen pb-20">
+        {children}
+        <BottomNav />
+      </div>
+    </ModeProvider>
   );
 }

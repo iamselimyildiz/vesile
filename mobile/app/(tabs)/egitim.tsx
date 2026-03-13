@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   Dimensions,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -18,9 +19,14 @@ import {
   isLevelUnlocked,
   completeLevel,
   getLevelProgress,
+  loadWatchedVideos,
+  getWatchedVideos,
+  isVideoUnlocked,
+  markVideoWatched,
 } from "@/lib/education-store";
 import Header from "@/components/ui/Header";
 import Button from "@/components/ui/Button";
+import VideoPlayer from "@/components/ui/VideoPlayer";
 
 type ScreenView = "roadmap" | "detail" | "quiz" | "done";
 
@@ -36,10 +42,23 @@ export default function EgitimScreen() {
   const [confirmed, setConfirmed] = useState(false);
   const [score, setScore] = useState(0);
 
+  // Video player state
+  const [playingVideoUrl, setPlayingVideoUrl] = useState<string | null>(null);
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [watchedRefresh, setWatchedRefresh] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
   const refresh = useCallback(async () => {
     await loadProgress();
+    await loadWatchedVideos();
     setCompletedMax(getCompletedLevel());
   }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }, [refresh]);
 
   useEffect(() => {
     refresh().then(() => setReady(true));
@@ -54,7 +73,12 @@ export default function EgitimScreen() {
     return (
       <View style={styles.screen}>
         <Header title="Eğitim" />
-        <ScrollView contentContainerStyle={styles.roadmapContainer}>
+        <ScrollView 
+          contentContainerStyle={styles.roadmapContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.gold]} />
+          }
+        >
           <Text style={styles.roadmapSubtitle}>
             Her seviyeyi tamamlayarak ilerleyin
           </Text>
@@ -111,6 +135,11 @@ export default function EgitimScreen() {
                   <Text style={[styles.nodeDesc, !unlocked && styles.nodeLocked]}>
                     {lvl.description}
                   </Text>
+                  {unlocked && !completed && (
+                    <Text style={styles.nodeCount}>
+                      {lvl.contents.length} video · {lvl.quiz.length} soru
+                    </Text>
+                  )}
                   {isGate && (
                     <View style={styles.gateBadge}>
                       <Ionicons name="shield-checkmark" size={12} color={colors.gold} />
@@ -134,10 +163,18 @@ export default function EgitimScreen() {
   // --- Level Detail View ---
   if (view === "detail" && level) {
     const completed = getCompletedLevel() >= level.id;
+    const watched = getWatchedVideos(level.id);
+    const allVideosWatched = level.contents.every((c) => watched.includes(c.id));
+
     return (
       <View style={styles.screen}>
         <Header title={level.title} />
-        <ScrollView contentContainerStyle={styles.detailContainer}>
+        <ScrollView 
+          contentContainerStyle={styles.detailContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.gold]} />
+          }
+        >
           {/* Back button */}
           <TouchableOpacity onPress={() => setView("roadmap")} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={20} color={colors.night} />
@@ -147,19 +184,55 @@ export default function EgitimScreen() {
           <Text style={styles.detailTitle}>{level.title}</Text>
           <Text style={styles.detailDesc}>{level.description}</Text>
 
-          {/* Articles */}
-          {level.contents.map((content) => (
-            <View key={content.id} style={styles.articleCard}>
-              <View style={styles.articleHeader}>
-                <Ionicons name="document-text-outline" size={18} color={colors.gold} />
-                <Text style={styles.articleTitle}>{content.title}</Text>
-              </View>
-              <Text style={styles.articleBody}>{content.body}</Text>
+          {/* Videolar */}
+          <View style={styles.sectionBlock}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="play-circle-outline" size={16} color={colors.gold} />
+              <Text style={styles.sectionLabel}>Videolar</Text>
             </View>
-          ))}
+            {level.contents.map((content, idx) => {
+              const unlocked = isVideoUnlocked(level.id, idx, level.contents);
+              const isWatched = watched.includes(content.id);
 
-          {/* Quiz button */}
-          {!completed && (
+              return (
+                <TouchableOpacity
+                  key={content.id}
+                  style={[styles.linkCard, !unlocked && styles.linkCardLocked]}
+                  onPress={() => {
+                    if (!unlocked) {
+                      Alert.alert("Kilitli", "Önce önceki videoyu izlemeniz gerekiyor.");
+                      return;
+                    }
+                    setPlayingVideoUrl(content.url);
+                    setPlayingVideoId(content.id);
+                  }}
+                  activeOpacity={unlocked ? 0.7 : 1}
+                >
+                  {!unlocked ? (
+                    <Ionicons name="lock-closed" size={18} color={colors.muted} />
+                  ) : isWatched ? (
+                    <Ionicons name="checkmark-circle" size={18} color={colors.green} />
+                  ) : (
+                    <Ionicons name="play-circle" size={18} color="#FF0000" />
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.linkCardTitle, !unlocked && styles.linkCardTitleLocked]}>
+                      {content.title}
+                    </Text>
+                    {!unlocked && (
+                      <Text style={styles.lockedHint}>Önceki videoyu izleyin</Text>
+                    )}
+                  </View>
+                  {unlocked && !isWatched && (
+                    <Ionicons name="play" size={14} color={colors.gold} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Quiz button - only when all videos watched */}
+          {!completed && allVideosWatched && (
             <Button
               title="Sınava Başla"
               variant="gold"
@@ -173,6 +246,14 @@ export default function EgitimScreen() {
               style={{ marginTop: 16, marginBottom: 40 }}
             />
           )}
+          {!completed && !allVideosWatched && (
+            <View style={styles.watchAllBanner}>
+              <Ionicons name="information-circle-outline" size={18} color={colors.gold} />
+              <Text style={styles.watchAllText}>
+                Sınava başlamak için tüm videoları izleyin
+              </Text>
+            </View>
+          )}
           {completed && (
             <View style={styles.completedBanner}>
               <Ionicons name="checkmark-circle" size={24} color={colors.green} />
@@ -180,6 +261,24 @@ export default function EgitimScreen() {
             </View>
           )}
         </ScrollView>
+
+        {/* Video Player Modal */}
+        {playingVideoUrl && (
+          <VideoPlayer
+            videoUrl={playingVideoUrl}
+            visible={!!playingVideoUrl}
+            onComplete={async () => {
+              if (playingVideoId && level) {
+                await markVideoWatched(level.id, playingVideoId);
+                setWatchedRefresh((n) => n + 1);
+              }
+            }}
+            onClose={() => {
+              setPlayingVideoUrl(null);
+              setPlayingVideoId(null);
+            }}
+          />
+        )}
       </View>
     );
   }
@@ -246,19 +345,48 @@ export default function EgitimScreen() {
             );
           })}
 
+          {/* Kopya - always visible */}
+          {(q.hint || q.source) && (
+            <View style={styles.kopyaBox}>
+              <View style={styles.kopyaHeader}>
+                <Ionicons name="book-outline" size={14} color={colors.gold} />
+                <Text style={styles.kopyaLabel}>KOPYA</Text>
+              </View>
+              {q.hint && (
+                <Text style={styles.kopyaHintText}>"{q.hint}"</Text>
+              )}
+              {q.source && (
+                <Text style={styles.kopyaSourceText}>— {q.source}</Text>
+              )}
+            </View>
+          )}
+
           {/* Confirm / Next */}
           {!confirmed && selected !== null && (
             <Button
               title="Cevabı Onayla"
               variant="primary"
               onPress={() => {
+                const correct = selected === q.correctIndex;
+                const newScore = correct ? score + 1 : score;
                 setConfirmed(true);
-                if (selected === q.correctIndex) {
+                if (correct) {
                   setScore((s) => s + 1);
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 } else {
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                 }
+                setTimeout(async () => {
+                  if (isLastQ) {
+                    const actualScore = Math.round((newScore / quiz.length) * 100);
+                    await completeLevel(level.id, actualScore);
+                    await refresh();
+                    setView("done");
+                  } else {
+                    setCurrentQ((c) => c + 1);
+                    setConfirmed(false);
+                  }
+                }, 1500);
               }}
               style={{ marginTop: 20 }}
             />
@@ -278,26 +406,6 @@ export default function EgitimScreen() {
                   </Text>
                 </View>
               )}
-              <Button
-                title={isLastQ ? "Sonuçları Gör" : "Sonraki Soru"}
-                variant="gold"
-                onPress={async () => {
-                  if (isLastQ) {
-                    const finalScore = Math.round(
-                      ((score + (isCorrect ? 0 : 0)) / quiz.length) * 100
-                    );
-                    // score already updated
-                    const actualScore = Math.round((score / quiz.length) * 100);
-                    await completeLevel(level.id, actualScore);
-                    await refresh();
-                    setView("done");
-                  } else {
-                    setCurrentQ((c) => c + 1);
-                    setConfirmed(false);
-                  }
-                }}
-                style={{ marginTop: 12 }}
-              />
             </View>
           )}
         </ScrollView>
@@ -442,6 +550,12 @@ const styles = StyleSheet.create({
     color: colors.gold,
     marginLeft: 4,
   },
+  nodeCount: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.gold,
+    marginTop: 3,
+  },
   scoreText: {
     fontFamily: fonts.sans,
     fontSize: 12,
@@ -478,31 +592,66 @@ const styles = StyleSheet.create({
     color: colors.night + "70",
     marginBottom: 20,
   },
-  articleCard: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: colors.night + "08",
+  sectionBlock: {
+    marginBottom: 16,
   },
-  articleHeader: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  articleTitle: {
+  sectionLabel: {
     fontFamily: fonts.sansSemiBold,
-    fontSize: 15,
-    color: colors.night,
-    marginLeft: 8,
-    flex: 1,
+    fontSize: 13,
+    color: colors.gold,
+    marginLeft: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  articleBody: {
+  linkCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.night + "08",
+    gap: 10,
+  },
+  linkCardTitle: {
     fontFamily: fonts.sans,
     fontSize: 14,
-    color: colors.night + "CC",
-    lineHeight: 22,
+    color: colors.night,
+    flex: 1,
+  },
+  linkCardLocked: {
+    opacity: 0.5,
+  },
+  linkCardTitleLocked: {
+    color: colors.muted,
+  },
+  lockedHint: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.muted,
+    marginTop: 2,
+  },
+  watchAllBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.gold + "10",
+    padding: 14,
+    borderRadius: 10,
+    marginTop: 16,
+    marginBottom: 40,
+  },
+  watchAllText: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.gold,
+    marginLeft: 8,
+    flex: 1,
   },
   completedBanner: {
     flexDirection: "row",
@@ -588,6 +737,41 @@ const styles = StyleSheet.create({
   },
   optionTextWrong: {
     color: colors.red,
+  },
+  kopyaBox: {
+    backgroundColor: colors.gold + "10",
+    borderLeftWidth: 3,
+    borderLeftColor: colors.gold,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  kopyaHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  kopyaLabel: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 11,
+    color: colors.gold,
+    marginLeft: 6,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  kopyaHintText: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.night + "CC",
+    fontStyle: "italic",
+    lineHeight: 20,
+  },
+  kopyaSourceText: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 11,
+    color: colors.gold,
+    marginTop: 4,
   },
   feedbackBox: {
     marginTop: 12,

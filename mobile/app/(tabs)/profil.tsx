@@ -9,24 +9,50 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors, fonts } from "@/constants/Theme";
 import { currentUser } from "@/lib/mock-data";
 import { loadProgress, getCompletedLevel } from "@/lib/education-store";
 import Header from "@/components/ui/Header";
 import Button from "@/components/ui/Button";
+import IdentitySwitcher from "@/components/ui/IdentitySwitcher";
+import { useMode } from "@/lib/mode-store";
+import type { Profile } from "@/lib/types";
+
+const PROFILE_KEY = "vesile_user_profile";
 
 export default function ProfilScreen() {
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState({ ...currentUser });
+  const [saving, setSaving] = useState(false);
   const [educationLevel, setEducationLevel] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const { mode } = useMode();
+
+  const loadData = async () => {
+    await loadProgress();
+    setEducationLevel(getCompletedLevel());
+    const stored = await AsyncStorage.getItem(PROFILE_KEY);
+    if (stored) {
+      try {
+        const saved = JSON.parse(stored) as Partial<Profile>;
+        setProfile((prev) => ({ ...prev, ...saved }));
+      } catch {}
+    }
+  };
 
   useEffect(() => {
-    loadProgress().then(() => {
-      setEducationLevel(getCompletedLevel());
-    });
+    loadData();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
 
   const getInitials = (name: string) =>
     name
@@ -35,9 +61,32 @@ export default function ProfilScreen() {
       .join("")
       .toUpperCase();
 
-  const handleSave = () => {
-    setEditing(false);
-    Alert.alert("Kaydedildi", "Profil bilgileriniz güncellendi.");
+  const handleSave = async () => {
+    if (!profile.full_name.trim()) {
+      Alert.alert("Hata", "Ad soyad boş bırakılamaz.");
+      return;
+    }
+    setSaving(true);
+    try {
+      // Sadece düzenlenebilir alanları kaydet
+      const editableFields: Partial<Profile> = {
+        full_name: profile.full_name.trim(),
+        age: profile.age,
+        city: profile.city.trim(),
+        profession: profile.profession.trim(),
+        bio: profile.bio.trim(),
+        mezhep: profile.mezhep,
+      };
+      await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(editableFields));
+      // currentUser'ı da güncelle (session boyunca geçerli)
+      Object.assign(currentUser, editableFields);
+      setEditing(false);
+      Alert.alert("Kaydedildi", "Profil bilgileriniz güncellendi.");
+    } catch {
+      Alert.alert("Hata", "Profil kaydedilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const mezLabel: Record<string, string> = {
@@ -54,10 +103,32 @@ export default function ProfilScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView 
+          contentContainerStyle={styles.container}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.gold]} />
+          }
+        >
+          {/* Kimlik switcher */}
+          <View style={styles.switcherWrapper}>
+            <IdentitySwitcher />
+            <Text style={styles.switcherHint}>
+              Şu an{" "}
+              <Text style={styles.switcherMode}>
+                {mode === "refakatci" ? "Refakatçi" : "Aday"}
+              </Text>{" "}
+              modundasınız.
+            </Text>
+          </View>
+
           {/* Avatar & Name */}
           <View style={styles.avatarSection}>
-            <View style={styles.avatar}>
+            <View
+              style={[
+                styles.avatar,
+                mode === "refakatci" && styles.avatarRefakatci,
+              ]}
+            >
               <Text style={styles.avatarText}>{getInitials(profile.full_name)}</Text>
             </View>
             {!editing && (
@@ -66,6 +137,44 @@ export default function ProfilScreen() {
                 <Text style={styles.metaText}>
                   {profile.age} · {profile.city} · {profile.profession}
                 </Text>
+                <View
+                  style={[
+                    styles.modeBadge,
+                    {
+                      backgroundColor:
+                        (mode === "refakatci"
+                          ? colors.refakatci
+                          : colors.aday) + "15",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={
+                      mode === "refakatci"
+                        ? "shield-checkmark"
+                        : "heart"
+                    }
+                    size={12}
+                    color={
+                      mode === "refakatci"
+                        ? colors.refakatci
+                        : colors.aday
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.modeBadgeText,
+                      {
+                        color:
+                          mode === "refakatci"
+                            ? colors.refakatci
+                            : colors.aday,
+                      },
+                    ]}
+                  >
+                    {mode === "refakatci" ? "Refakatçi" : "Aday"}
+                  </Text>
+                </View>
               </>
             )}
           </View>
@@ -186,9 +295,10 @@ export default function ProfilScreen() {
                   style={{ flex: 1 }}
                 />
                 <Button
-                  title="Kaydet"
+                  title={saving ? "Kaydediliyor..." : "Kaydet"}
                   variant="gold"
                   onPress={handleSave}
+                  disabled={saving}
                   style={{ flex: 1, marginLeft: 10 }}
                 />
               </View>
@@ -202,6 +312,11 @@ export default function ProfilScreen() {
                 <InfoRow icon="calendar-outline" label="Yaş" value={String(profile.age)} />
                 <InfoRow icon="location-outline" label="Şehir" value={profile.city} />
                 <InfoRow icon="briefcase-outline" label="Meslek" value={profile.profession} />
+                <InfoRow
+                  icon="heart-outline"
+                  label="Medeni Hal"
+                  value={profile.marital_status === "evli" ? "Evli" : "Bekâr"}
+                />
               </View>
 
               <View style={styles.infoSection}>
@@ -292,6 +407,19 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 40,
   },
+  switcherWrapper: {
+    marginBottom: 20,
+  },
+  switcherHint: {
+    marginTop: 8,
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.night + "70",
+  },
+  switcherMode: {
+    fontFamily: fonts.sansSemiBold,
+    color: colors.night,
+  },
   avatarSection: {
     alignItems: "center",
     marginBottom: 20,
@@ -304,6 +432,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
+  },
+  avatarRefakatci: {
+    backgroundColor: colors.refakatci + "15",
+  },
+  modeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  modeBadgeText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
   },
   avatarText: {
     fontFamily: fonts.sansBold,

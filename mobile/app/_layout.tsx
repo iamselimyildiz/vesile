@@ -1,9 +1,19 @@
-import { useFonts, PlayfairDisplay_400Regular, PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
+import {
+  useFonts,
+  PlayfairDisplay_400Regular,
+  PlayfairDisplay_700Bold,
+} from "@expo-google-fonts/playfair-display";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
+import { ModeProvider } from "@/lib/mode-store";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -34,11 +44,11 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <>
+    <ModeProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
       </Stack>
-    </>
+    </ModeProvider>
   );
 }

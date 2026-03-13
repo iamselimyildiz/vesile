@@ -10,6 +10,12 @@
   --color-gold-dark: #A88A45;
   --color-muted: #9E9E9E;
   --color-muted-light: #E0E0E0;
+  --color-refakatci: #BF4646;
+  --color-refakatci-light: #D45A5A;
+  --color-refakatci-dark: #A33A3A;
+  --color-aday: #7EACB5;
+  --color-aday-light: #96BEC6;
+  --color-aday-dark: #6A969F;
 
   --font-serif: "Playfair Display", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,15 +7,33 @@ import {
   StyleSheet,
   Modal,
   Alert,
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts } from "@/constants/Theme";
-import { mockProfiles, currentUser } from "@/lib/mock-data";
+import {
+  mockProfiles,
+  currentUser,
+  mockGuardianRelations,
+  mockKarneAnalysis,
+  karneCategories,
+} from "@/lib/mock-data";
 import * as Haptics from "expo-haptics";
 import { loadProgress, hasCompletedGate } from "@/lib/education-store";
-import { loadRequests, addRequest, getSentProfileIds } from "@/lib/requests-store";
+import {
+  loadRequests,
+  addRequest,
+  getSentProfileIds,
+} from "@/lib/requests-store";
 import Header from "@/components/ui/Header";
 import Button from "@/components/ui/Button";
+import { useMode } from "@/lib/mode-store";
+import type { KarneAnalysis } from "@/lib/types";
 
 type Mezhep = "" | "hanefi" | "shafii" | "maliki" | "hanbeli";
 
@@ -26,7 +44,12 @@ interface Filters {
   ageMax: number;
 }
 
-const defaultFilters: Filters = { city: "", mezhep: "", ageMin: 18, ageMax: 60 };
+const defaultFilters: Filters = {
+  city: "",
+  mezhep: "",
+  ageMin: 18,
+  ageMax: 60,
+};
 
 const CITIES = ["İstanbul", "Ankara", "Bursa", "Konya", "İzmir"];
 const MEZHEPS: { label: string; value: Mezhep }[] = [
@@ -101,26 +124,449 @@ function getFikhForMezhep(mezhep: string): FikhEntry[] {
   return sets[idx];
 }
 
+// ─── Emanetim (Refakatçi mode) ──────────────────────────────────
+function EmanetimView() {
+  const myRelations = mockGuardianRelations.filter(
+    (r) => r.refakatci_id === currentUser.id
+  );
+  const [activeCatIdx, setActiveCatIdx] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<KarneAnalysis | null>(null);
+
+  // ── Akıllı Klavye Yönetimi ──
+  const scrollViewRef = useRef<ScrollView>(null);
+  const questionSectionY = useRef<number>(0);
+  const questionYPositions = useRef<Record<string, number>>({});
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  }, []);
+
+  if (myRelations.length === 0) {
+    return (
+      <View style={styles.screen}>
+        <Header title="Emanetim" />
+        <View style={styles.emptyState}>
+          <Ionicons name="shield-outline" size={48} color={colors.muted} />
+          <Text style={styles.emptyTitle}>Emanetiniz yok</Text>
+          <Text style={styles.emptyDesc}>
+            Henüz bir adaya refakatçi olarak atanmadınız
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const relation = myRelations[0];
+  const adayProfile = mockProfiles.find((p) => p.id === relation.aday_id);
+  if (!adayProfile) return null;
+
+  const totalQuestions = karneCategories.reduce(
+    (sum, cat) => sum + cat.questions.length,
+    0
+  );
+  const answeredCount = Object.values(answers).filter(
+    (a) => a.trim().length > 0
+  ).length;
+  const progress = totalQuestions > 0 ? answeredCount / totalQuestions : 0;
+  const activeCat = karneCategories[activeCatIdx];
+
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+
+  const handleSubmit = () => {
+    if (answeredCount < totalQuestions) {
+      Alert.alert(
+        "Eksik Cevaplar",
+        `Lütfen tüm ${totalQuestions} soruyu cevaplayın. (${answeredCount}/${totalQuestions} cevaplandı)`
+      );
+      return;
+    }
+    setAnalyzing(true);
+    // Simulate AI analysis
+    setTimeout(() => {
+      setAnalysis(mockKarneAnalysis as KarneAnalysis);
+      setAnalyzing(false);
+    }, 2000);
+  };
+
+  const boyutLabels: Record<string, string> = {
+    durustukluk: "Dürüstlük",
+    sorumluluk: "Sorumluluk",
+    empati: "Empati",
+    dini_hassasiyet: "Dini Hassasiyet",
+    sosyal_uyum: "Sosyal Uyum",
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      <Header title="Emanetim" />
+      <ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={emanetStyles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.gold]} />
+        }
+      >
+        {/* Aday Info Card */}
+        <View style={emanetStyles.adayCard}>
+          <View style={emanetStyles.adayAvatar}>
+            <Text style={emanetStyles.adayAvatarText}>
+              {getInitials(adayProfile.full_name)}
+            </Text>
+          </View>
+          <View style={emanetStyles.adayInfo}>
+            <Text style={emanetStyles.adayName}>
+              {adayProfile.full_name}
+            </Text>
+            <Text style={emanetStyles.adayMeta}>
+              {adayProfile.age} · {adayProfile.city} ·{" "}
+              {adayProfile.profession}
+            </Text>
+            <Text style={emanetStyles.adayRelation}>
+              İlişki: {relation.relation}
+            </Text>
+          </View>
+        </View>
+
+        {analysis ? (
+          // ─── Analysis Results ──────────────────────────
+          <View>
+            <Text style={emanetStyles.sectionTitle}>
+              AI Karakter Analizi
+            </Text>
+
+            {/* Boyut bars */}
+            {Object.entries(analysis.boyutlar).map(([key, val]) => (
+              <View key={key} style={emanetStyles.boyutRow}>
+                <View style={emanetStyles.boyutHeader}>
+                  <Text style={emanetStyles.boyutLabel}>
+                    {boyutLabels[key] || key}
+                  </Text>
+                  <Text style={emanetStyles.boyutPuan}>
+                    {val.puan}/10
+                  </Text>
+                </View>
+                <View style={emanetStyles.barBg}>
+                  <View
+                    style={[
+                      emanetStyles.barFill,
+                      { width: `${val.puan * 10}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={emanetStyles.boyutGerekce}>
+                  {val.gerekce}
+                </Text>
+              </View>
+            ))}
+
+            {/* Özet Portre */}
+            <View style={emanetStyles.analysisCard}>
+              <Text style={emanetStyles.analysisTitle}>
+                Özet Portre
+              </Text>
+              <Text style={emanetStyles.analysisText}>
+                {analysis.ozet_portre}
+              </Text>
+            </View>
+
+            {/* Güçlü Yönler */}
+            <View style={emanetStyles.analysisCard}>
+              <Text style={emanetStyles.analysisTitle}>
+                Güçlü Yönler
+              </Text>
+              {analysis.guclu_yonler.map((item, i) => (
+                <View key={i} style={emanetStyles.listItem}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={colors.green}
+                  />
+                  <Text style={emanetStyles.listItemText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Dikkat Alanları */}
+            <View style={emanetStyles.analysisCard}>
+              <Text style={emanetStyles.analysisTitle}>
+                Dikkat Alanları
+              </Text>
+              {analysis.dikkat_alanlari.map((item, i) => (
+                <View key={i} style={emanetStyles.listItem}>
+                  <Ionicons
+                    name="alert-circle"
+                    size={16}
+                    color={colors.gold}
+                  />
+                  <Text style={emanetStyles.listItemText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : (
+          // ─── Karne Form ────────────────────────────────
+          <View>
+            <Text style={emanetStyles.sectionTitle}>
+              360° Karne Formu
+            </Text>
+
+            {/* Progress */}
+            <View style={emanetStyles.progressRow}>
+              <View style={emanetStyles.progressBarBg}>
+                <View
+                  style={[
+                    emanetStyles.progressBarFill,
+                    { width: `${progress * 100}%` },
+                  ]}
+                />
+              </View>
+              <Text style={emanetStyles.progressText}>
+                {answeredCount}/{totalQuestions} soru
+              </Text>
+            </View>
+
+            {/* Category Tabs */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={emanetStyles.catTabScroll}
+              contentContainerStyle={emanetStyles.catTabRow}
+            >
+              {karneCategories.map((cat, idx) => {
+                const catAnswered = cat.questions.filter(
+                  (q) => answers[q.id]?.trim()
+                ).length;
+                return (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[
+                      emanetStyles.catTab,
+                      activeCatIdx === idx && emanetStyles.catTabActive,
+                    ]}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setActiveCatIdx(idx);
+                      setTimeout(
+                        () =>
+                          scrollViewRef.current?.scrollTo({
+                            y: 0,
+                            animated: true,
+                          }),
+                        80
+                      );
+                    }}
+                  >
+                    <Text
+                      style={[
+                        emanetStyles.catTabText,
+                        activeCatIdx === idx &&
+                          emanetStyles.catTabTextActive,
+                      ]}
+                    >
+                      {cat.title}
+                    </Text>
+                    <Text
+                      style={[
+                        emanetStyles.catTabCount,
+                        activeCatIdx === idx &&
+                          emanetStyles.catTabCountActive,
+                      ]}
+                    >
+                      {catAnswered}/{cat.questions.length}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Questions */}
+            <View
+              style={emanetStyles.questionSection}
+              onLayout={(e) => {
+                questionSectionY.current = e.nativeEvent.layout.y;
+              }}
+            >
+              <Text style={emanetStyles.catDescription}>
+                {activeCat.description}
+              </Text>
+              {activeCat.questions.map((q, qIdx) => (
+                <View
+                  key={q.id}
+                  style={emanetStyles.questionCard}
+                  onLayout={(e) => {
+                    questionYPositions.current[q.id] =
+                      e.nativeEvent.layout.y;
+                  }}
+                >
+                  <Text style={emanetStyles.questionNumber}>
+                    Soru {qIdx + 1}
+                  </Text>
+                  <Text style={emanetStyles.questionText}>
+                    {q.question}
+                  </Text>
+                  <TextInput
+                    style={emanetStyles.answerInput}
+                    value={answers[q.id] || ""}
+                    onChangeText={(v) =>
+                      setAnswers({ ...answers, [q.id]: v })
+                    }
+                    placeholder="Cevabınızı buraya yazın..."
+                    placeholderTextColor={colors.muted}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                    onFocus={() => {
+                      // Klavye açıldıktan sonra soruya kaydır
+                      setTimeout(() => {
+                        const absY =
+                          questionSectionY.current +
+                          (questionYPositions.current[q.id] ?? 0);
+                        scrollViewRef.current?.scrollTo({
+                          y: Math.max(0, absY - 80),
+                          animated: true,
+                        });
+                      }, 180);
+                    }}
+                  />
+                </View>
+              ))}
+            </View>
+
+            {/* Nav */}
+            <View style={emanetStyles.navRow}>
+              {activeCatIdx > 0 && (
+                <TouchableOpacity
+                  style={emanetStyles.navBtn}
+                  onPress={() => setActiveCatIdx(activeCatIdx - 1)}
+                >
+                  <Ionicons
+                    name="chevron-back"
+                    size={18}
+                    color={colors.night}
+                  />
+                  <Text style={emanetStyles.navBtnText}>Önceki</Text>
+                </TouchableOpacity>
+              )}
+              <View style={{ flex: 1 }} />
+              {activeCatIdx < karneCategories.length - 1 ? (
+                <TouchableOpacity
+                  style={emanetStyles.navBtn}
+                  onPress={() => setActiveCatIdx(activeCatIdx + 1)}
+                >
+                  <Text style={emanetStyles.navBtnText}>Sonraki</Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color={colors.night}
+                  />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    emanetStyles.navBtn,
+                    emanetStyles.submitBtn,
+                  ]}
+                  onPress={handleSubmit}
+                  disabled={analyzing}
+                >
+                  {analyzing ? (
+                    <ActivityIndicator color={colors.white} size="small" />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="sparkles"
+                        size={16}
+                        color={colors.white}
+                      />
+                      <Text style={emanetStyles.submitBtnText}>
+                        AI Analiz
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+// ─── Keşfet (Aday mode) ────────────────────────────────────────
 export default function KesfetScreen() {
+  const { mode } = useMode();
+
+  // If refakatci mode, show Emanetim
+  if (mode === "refakatci") {
+    return <EmanetimView />;
+  }
+
+  // If married, show Keşfet Kapalı
+  if (currentUser.marital_status === "evli") {
+    return (
+      <View style={styles.screen}>
+        <Header title="Keşfet" />
+        <View style={styles.emptyState}>
+          <Ionicons name="heart-dislike-outline" size={48} color={colors.muted} />
+          <Text style={styles.emptyTitle}>Keşfet Kapalı</Text>
+          <Text style={styles.emptyDesc}>
+            Evli kullanıcılar için keşfet sayfası kullanılamaz
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return <KesfetContent />;
+}
+
+function KesfetContent() {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [showFilter, setShowFilter] = useState(false);
   const [tempFilters, setTempFilters] = useState<Filters>(defaultFilters);
   const [gateCompleted, setGateCompleted] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = async () => {
+    await loadProgress();
+    setGateCompleted(hasCompletedGate());
+    await loadRequests();
+    setSentIds(getSentProfileIds());
+  };
 
   useEffect(() => {
-    loadProgress().then(() => {
-      setGateCompleted(hasCompletedGate());
-    });
-    loadRequests().then(() => {
-      setSentIds(getSentProfileIds());
-    });
+    loadData();
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
   }, []);
 
   const candidates = useMemo(() => {
     return mockProfiles
       .filter((p) => p.gender !== currentUser.gender)
+      .filter((p) => p.marital_status === "bekar")
       .filter((p) => !sentIds.has(p.id))
       .filter((p) => {
         if (filters.city && p.city !== filters.city) return false;
@@ -184,7 +630,9 @@ export default function KesfetScreen() {
           {(filters.ageMin !== 18 || filters.ageMax !== 60) && (
             <TouchableOpacity
               style={styles.chip}
-              onPress={() => setFilters({ ...filters, ageMin: 18, ageMax: 60 })}
+              onPress={() =>
+                setFilters({ ...filters, ageMin: 18, ageMax: 60 })
+              }
             >
               <Text style={styles.chipText}>
                 {filters.ageMin}-{filters.ageMax} yaş
@@ -205,12 +653,23 @@ export default function KesfetScreen() {
         </View>
       )}
 
-      <ScrollView contentContainerStyle={styles.listContainer}>
+      <ScrollView 
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.gold]} />
+        }
+      >
         {candidates.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="search-outline" size={48} color={colors.muted} />
+            <Ionicons
+              name="search-outline"
+              size={48}
+              color={colors.muted}
+            />
             <Text style={styles.emptyTitle}>Aday bulunamadı</Text>
-            <Text style={styles.emptyDesc}>Filtreleri değiştirerek tekrar deneyin</Text>
+            <Text style={styles.emptyDesc}>
+              Filtreleri değiştirerek tekrar deneyin
+            </Text>
             <Button
               title="Filtreleri Temizle"
               variant="secondary"
@@ -228,16 +687,22 @@ export default function KesfetScreen() {
                 {/* Profile Header */}
                 <View style={styles.cardHeader}>
                   <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{getInitials(profile.full_name)}</Text>
+                    <Text style={styles.avatarText}>
+                      {getInitials(profile.full_name)}
+                    </Text>
                   </View>
                   <View style={styles.cardInfo}>
-                    <Text style={styles.cardName}>{profile.full_name}</Text>
+                    <Text style={styles.cardName}>
+                      {profile.full_name}
+                    </Text>
                     <Text style={styles.cardMeta}>
-                      {profile.age} · {profile.city} · {profile.profession}
+                      {profile.age} · {profile.city} ·{" "}
+                      {profile.profession}
                     </Text>
                     <View style={styles.mezTag}>
                       <Text style={styles.mezTagText}>
-                        {MEZHEPS.find((m) => m.value === profile.mezhep)?.label || profile.mezhep}
+                        {MEZHEPS.find((m) => m.value === profile.mezhep)
+                          ?.label || profile.mezhep}
                       </Text>
                     </View>
                   </View>
@@ -254,8 +719,12 @@ export default function KesfetScreen() {
                   </View>
                   {fikh.map((entry, i) => (
                     <View key={i} style={styles.fikhEntry}>
-                      <Text style={styles.fikhText}>"{entry.text}"</Text>
-                      <Text style={styles.fikhSource}>{entry.source}</Text>
+                      <Text style={styles.fikhText}>
+                        "{entry.text}"
+                      </Text>
+                      <Text style={styles.fikhSource}>
+                        {entry.source}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -278,15 +747,20 @@ export default function KesfetScreen() {
                     />
                   </TouchableOpacity>
                   <Button
-                    title={gateCompleted ? "Tanışma Talebi" : "Seviye 3 Gerekli"}
+                    title={
+                      gateCompleted
+                        ? "Tanışma Talebi"
+                        : "Seviye 3 Gerekli"
+                    }
                     variant={gateCompleted ? "gold" : "secondary"}
                     disabled={!gateCompleted}
                     onPress={async () => {
                       if (gateCompleted) {
                         await addRequest(profile.id);
                         setSentIds(getSentProfileIds());
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        Alert.alert("Talep Gönderildi", `${profile.full_name} adayına tanışma talebi gönderildi.`);
+                        Haptics.notificationAsync(
+                          Haptics.NotificationFeedbackType.Success
+                        );
                       }
                     }}
                     style={{ flex: 1, marginLeft: 12 }}
@@ -318,19 +792,22 @@ export default function KesfetScreen() {
                     key={city}
                     style={[
                       styles.filterChip,
-                      tempFilters.city === city && styles.filterChipActive,
+                      tempFilters.city === city &&
+                        styles.filterChipActive,
                     ]}
                     onPress={() =>
                       setTempFilters({
                         ...tempFilters,
-                        city: tempFilters.city === city ? "" : city,
+                        city:
+                          tempFilters.city === city ? "" : city,
                       })
                     }
                   >
                     <Text
                       style={[
                         styles.filterChipText,
-                        tempFilters.city === city && styles.filterChipTextActive,
+                        tempFilters.city === city &&
+                          styles.filterChipTextActive,
                       ]}
                     >
                       {city}
@@ -347,19 +824,24 @@ export default function KesfetScreen() {
                     key={m.value}
                     style={[
                       styles.filterChip,
-                      tempFilters.mezhep === m.value && styles.filterChipActive,
+                      tempFilters.mezhep === m.value &&
+                        styles.filterChipActive,
                     ]}
                     onPress={() =>
                       setTempFilters({
                         ...tempFilters,
-                        mezhep: tempFilters.mezhep === m.value ? "" : (m.value as Mezhep),
+                        mezhep:
+                          tempFilters.mezhep === m.value
+                            ? ""
+                            : (m.value as Mezhep),
                       })
                     }
                   >
                     <Text
                       style={[
                         styles.filterChipText,
-                        tempFilters.mezhep === m.value && styles.filterChipTextActive,
+                        tempFilters.mezhep === m.value &&
+                          styles.filterChipTextActive,
                       ]}
                     >
                       {m.label}
@@ -370,7 +852,8 @@ export default function KesfetScreen() {
 
               {/* Age Range */}
               <Text style={styles.filterLabel}>
-                Yaş Aralığı: {tempFilters.ageMin} - {tempFilters.ageMax}
+                Yaş Aralığı: {tempFilters.ageMin} -{" "}
+                {tempFilters.ageMax}
               </Text>
               <View style={styles.ageRow}>
                 <View style={styles.ageInputBox}>
@@ -380,24 +863,40 @@ export default function KesfetScreen() {
                       onPress={() =>
                         setTempFilters({
                           ...tempFilters,
-                          ageMin: Math.max(18, tempFilters.ageMin - 1),
+                          ageMin: Math.max(
+                            18,
+                            tempFilters.ageMin - 1
+                          ),
                         })
                       }
                       style={styles.ageBtn}
                     >
-                      <Ionicons name="remove" size={18} color={colors.night} />
+                      <Ionicons
+                        name="remove"
+                        size={18}
+                        color={colors.night}
+                      />
                     </TouchableOpacity>
-                    <Text style={styles.ageValue}>{tempFilters.ageMin}</Text>
+                    <Text style={styles.ageValue}>
+                      {tempFilters.ageMin}
+                    </Text>
                     <TouchableOpacity
                       onPress={() =>
                         setTempFilters({
                           ...tempFilters,
-                          ageMin: Math.min(tempFilters.ageMax, tempFilters.ageMin + 1),
+                          ageMin: Math.min(
+                            tempFilters.ageMax,
+                            tempFilters.ageMin + 1
+                          ),
                         })
                       }
                       style={styles.ageBtn}
                     >
-                      <Ionicons name="add" size={18} color={colors.night} />
+                      <Ionicons
+                        name="add"
+                        size={18}
+                        color={colors.night}
+                      />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -409,24 +908,40 @@ export default function KesfetScreen() {
                       onPress={() =>
                         setTempFilters({
                           ...tempFilters,
-                          ageMax: Math.max(tempFilters.ageMin, tempFilters.ageMax - 1),
+                          ageMax: Math.max(
+                            tempFilters.ageMin,
+                            tempFilters.ageMax - 1
+                          ),
                         })
                       }
                       style={styles.ageBtn}
                     >
-                      <Ionicons name="remove" size={18} color={colors.night} />
+                      <Ionicons
+                        name="remove"
+                        size={18}
+                        color={colors.night}
+                      />
                     </TouchableOpacity>
-                    <Text style={styles.ageValue}>{tempFilters.ageMax}</Text>
+                    <Text style={styles.ageValue}>
+                      {tempFilters.ageMax}
+                    </Text>
                     <TouchableOpacity
                       onPress={() =>
                         setTempFilters({
                           ...tempFilters,
-                          ageMax: Math.min(60, tempFilters.ageMax + 1),
+                          ageMax: Math.min(
+                            60,
+                            tempFilters.ageMax + 1
+                          ),
                         })
                       }
                       style={styles.ageBtn}
                     >
-                      <Ionicons name="add" size={18} color={colors.night} />
+                      <Ionicons
+                        name="add"
+                        size={18}
+                        color={colors.night}
+                      />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -458,6 +973,265 @@ export default function KesfetScreen() {
   );
 }
 
+// ─── Emanetim Styles ────────────────────────────────────────────
+const emanetStyles = StyleSheet.create({
+  container: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  adayCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.refakatci + "10",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.refakatci + "20",
+  },
+  adayAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.refakatci + "20",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  adayAvatarText: {
+    fontFamily: fonts.sansBold,
+    fontSize: 18,
+    color: colors.refakatci,
+  },
+  adayInfo: {
+    flex: 1,
+  },
+  adayName: {
+    fontFamily: fonts.serifBold,
+    fontSize: 17,
+    color: colors.night,
+  },
+  adayMeta: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.night + "70",
+    marginTop: 2,
+  },
+  adayRelation: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    color: colors.refakatci,
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontFamily: fonts.serifBold,
+    fontSize: 18,
+    color: colors.night,
+    marginBottom: 12,
+  },
+  progressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+    gap: 10,
+  },
+  progressBarBg: {
+    flex: 1,
+    height: 6,
+    backgroundColor: colors.night + "10",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: 6,
+    backgroundColor: colors.refakatci,
+    borderRadius: 3,
+  },
+  progressText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    color: colors.night + "60",
+  },
+  catTabScroll: {
+    marginBottom: 14,
+  },
+  catTabRow: {
+    gap: 8,
+  },
+  catTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.creamDark,
+    borderWidth: 1,
+    borderColor: colors.night + "10",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  catTabActive: {
+    backgroundColor: colors.refakatci + "15",
+    borderColor: colors.refakatci,
+  },
+  catTabText: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.night + "70",
+  },
+  catTabTextActive: {
+    color: colors.refakatci,
+    fontFamily: fonts.sansMedium,
+  },
+  catTabCount: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.night + "40",
+  },
+  catTabCountActive: {
+    color: colors.refakatci + "80",
+  },
+  questionSection: {
+    marginBottom: 16,
+  },
+  catDescription: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.night + "70",
+    marginBottom: 12,
+  },
+  questionCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.night + "08",
+  },
+  questionNumber: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 11,
+    color: colors.refakatci,
+    marginBottom: 4,
+  },
+  questionText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.night,
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  answerInput: {
+    backgroundColor: colors.cream,
+    borderRadius: 8,
+    padding: 12,
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    color: colors.night,
+    minHeight: 80,
+    borderWidth: 1,
+    borderColor: colors.night + "08",
+    textAlignVertical: "top",
+  },
+  navRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  navBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: colors.creamDark,
+    gap: 4,
+  },
+  navBtnText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.night,
+  },
+  submitBtn: {
+    backgroundColor: colors.refakatci,
+  },
+  submitBtnText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.white,
+  },
+  // Analysis results
+  boyutRow: {
+    marginBottom: 16,
+  },
+  boyutHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  boyutLabel: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.night,
+  },
+  boyutPuan: {
+    fontFamily: fonts.sansBold,
+    fontSize: 13,
+    color: colors.refakatci,
+  },
+  barBg: {
+    height: 8,
+    backgroundColor: colors.night + "10",
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 4,
+  },
+  barFill: {
+    height: 8,
+    backgroundColor: colors.refakatci,
+    borderRadius: 4,
+  },
+  boyutGerekce: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.night + "70",
+    fontStyle: "italic",
+  },
+  analysisCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.night + "08",
+  },
+  analysisTitle: {
+    fontFamily: fonts.serifBold,
+    fontSize: 15,
+    color: colors.night,
+    marginBottom: 8,
+  },
+  analysisText: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    color: colors.night + "CC",
+    lineHeight: 22,
+  },
+  listItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6,
+  },
+  listItemText: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    color: colors.night + "CC",
+    flex: 1,
+  },
+});
+
+// ─── Keşfet Styles ──────────────────────────────────────────────
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -519,6 +1293,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.muted,
     marginTop: 4,
+    textAlign: "center",
+    paddingHorizontal: 24,
   },
 
   // Card

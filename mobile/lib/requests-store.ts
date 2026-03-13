@@ -5,12 +5,12 @@ import { currentUser, mockRequests } from "./mock-data";
 const STORAGE_KEY = "vesile_sent_requests";
 
 // Memory cache
-let cachedRequests: MatchRequest[] | null = null;
+let cachedRequests: MatchRequest[] = [];
 
 export async function loadRequests(): Promise<MatchRequest[]> {
   try {
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
-    cachedRequests = stored ? JSON.parse(stored) : [];
+    cachedRequests = stored ? (JSON.parse(stored) as MatchRequest[]) : [];
     return cachedRequests;
   } catch {
     cachedRequests = [];
@@ -19,7 +19,7 @@ export async function loadRequests(): Promise<MatchRequest[]> {
 }
 
 export function getRequestsSync(): MatchRequest[] {
-  return cachedRequests ?? [];
+  return cachedRequests;
 }
 
 export async function addRequest(receiverId: string): Promise<MatchRequest> {
@@ -59,4 +59,29 @@ export function getSentProfileIds(): Set<string> {
  */
 export function getAllRequests(): MatchRequest[] {
   return [...mockRequests, ...getRequestsSync()];
+}
+
+/**
+ * Update status of a request (accept/reject).
+ * Works on both mockRequests (in-memory mutation) and runtime requests.
+ */
+export async function updateRequestStatus(
+  requestId: string,
+  status: "accepted" | "rejected"
+): Promise<void> {
+  // Try to update in mockRequests (in-memory, not persisted but works for session)
+  const mockIdx = mockRequests.findIndex((r) => r.id === requestId);
+  if (mockIdx >= 0) {
+    mockRequests[mockIdx] = { ...mockRequests[mockIdx], status };
+    return;
+  }
+
+  // Update in runtime cached requests and persist
+  const requests = cachedRequests.slice();
+  const idx = requests.findIndex((r) => r.id === requestId);
+  if (idx >= 0) {
+    requests[idx] = { ...requests[idx], status };
+    cachedRequests = requests;
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+  }
 }

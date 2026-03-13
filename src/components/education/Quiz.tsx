@@ -111,14 +111,26 @@ export default function Quiz({ questions, levelId, onComplete, onBack }: QuizPro
 
       {/* Feedback */}
       {confirmed && (
-        <div
-          className={`mb-6 p-4 rounded-xl text-sm font-sans ${
-            isCorrect
-              ? "bg-green-50 text-green-700 border border-green-200"
-              : "bg-red-50 text-red-700 border border-red-200"
-          }`}
-        >
-          {isCorrect ? "Doğru cevap!" : `Yanlış. Doğru cevap: ${question.options[question.correctIndex]}`}
+        <div className="mb-6 space-y-2">
+          <div
+            className={`p-4 rounded-xl text-sm font-sans ${
+              isCorrect
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-red-50 text-red-700 border border-red-200"
+            }`}
+          >
+            {isCorrect ? "Doğru cevap!" : `Yanlış. Doğru cevap: ${question.options[question.correctIndex]}`}
+          </div>
+          {question.hint && (
+            <div className="bg-gold/8 border-l-4 border-gold rounded-r-xl p-4">
+              <p className="text-sm font-sans text-night/70 italic">
+                💡 &ldquo;{question.hint}&rdquo;
+              </p>
+              {question.source && (
+                <p className="text-xs font-sans font-semibold text-gold mt-1">— {question.source}</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 

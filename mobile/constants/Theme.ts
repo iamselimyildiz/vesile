@@ -11,6 +11,9 @@ export const colors = {
   white: "#FFFFFF",
   red: "#DC2626",
   green: "#16A34A",
+  // Kimlik modları (PRD renkleri)
+  refakatci: "#8A9A86",
+  aday: "#C4A484",
 };
 
 export const fonts = {

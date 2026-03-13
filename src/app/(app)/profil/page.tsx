@@ -4,14 +4,17 @@ import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import IdentitySwitcher from "@/components/ui/IdentitySwitcher";
 import { currentUser } from "@/lib/mock-data";
 import { getCompletedLevel } from "@/lib/education-store";
+import { useMode } from "@/lib/mode-store";
 
 export default function ProfilPage() {
   const [profile, setProfile] = useState(currentUser);
   const [editing, setEditing] = useState(false);
   const [educationLevel, setEducationLevel] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const { mode } = useMode();
 
   useEffect(() => {
     setMounted(true);
@@ -26,17 +29,33 @@ export default function ProfilPage() {
 
   const handleSave = () => {
     setEditing(false);
-    // In production: save to Supabase
   };
 
   return (
     <>
       <Header title="Profil" />
       <main className="max-w-lg mx-auto px-5 py-6">
+        {/* Identity Switcher */}
+        <div className="mb-6">
+          <label className="text-xs font-sans font-semibold text-gold uppercase tracking-wider block mb-2">
+            Kimlik Seçici
+          </label>
+          <IdentitySwitcher />
+          <p className="text-xs text-night/40 font-sans mt-2">
+            {mode === "refakatci"
+              ? "Refakatçi modunda emanetinize ait karne doldurabilir ve sohbetleri gözlemleyebilirsiniz."
+              : "Aday modunda profilleri keşfedebilir ve sohbet başlatabilirsiniz."}
+          </p>
+        </div>
+
         {/* Profile header */}
         <div className="text-center mb-8">
-          <div className="w-24 h-24 mx-auto rounded-full bg-night/5 flex items-center justify-center mb-4">
-            <span className="font-serif text-3xl font-bold text-night/30">
+          <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center mb-4 ${
+            mode === "refakatci" ? "bg-refakatci/10" : "bg-night/5"
+          }`}>
+            <span className={`font-serif text-3xl font-bold ${
+              mode === "refakatci" ? "text-refakatci/50" : "text-night/30"
+            }`}>
               {initials}
             </span>
           </div>
@@ -46,9 +65,16 @@ export default function ProfilPage() {
           <p className="text-sm text-night/40 font-sans mt-1">
             {profile.city} &middot; {profile.age} yaş &middot; {profile.profession}
           </p>
-          {mounted && educationLevel > 0 && (
-            <div className="mt-3">
-              <Badge level={educationLevel} />
+          {mounted && (
+            <div className="flex items-center justify-center gap-2 mt-3">
+              {educationLevel > 0 && <Badge level={educationLevel} />}
+              <span className={`text-xs font-sans font-medium px-3 py-1 rounded-full ${
+                mode === "refakatci"
+                  ? "bg-refakatci/10 text-refakatci"
+                  : "bg-aday/10 text-aday"
+              }`}>
+                {mode === "refakatci" ? "Refakatçi" : "Aday"}
+              </span>
             </div>
           )}
         </div>
@@ -139,6 +165,12 @@ export default function ProfilPage() {
               <span className="text-sm text-night/40 font-sans">Namaz</span>
               <span className="text-sm font-sans text-night font-medium">
                 {profile.namaz_regularity}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-night/40 font-sans">Medeni Hal</span>
+              <span className="text-sm font-sans text-night font-medium">
+                {profile.marital_status === "bekar" ? "Bekâr" : "Evli"}
               </span>
             </div>
           </div>

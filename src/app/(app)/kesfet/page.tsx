@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import CandidateCard from "@/components/cards/CandidateCard";
 import FilterPanel, { Filters, defaultFilters } from "@/components/cards/FilterPanel";
 import { mockProfiles, currentUser } from "@/lib/mock-data";
 import { hasCompletedGate } from "@/lib/education-store";
+import { useMode } from "@/lib/mode-store";
 
 const mezhepLabels: Record<string, string> = {
   hanefi: "Hanefî",
@@ -15,6 +17,8 @@ const mezhepLabels: Record<string, string> = {
 };
 
 export default function KesfetPage() {
+  const router = useRouter();
+  const { mode } = useMode();
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [requested, setRequested] = useState<Set<string>>(new Set());
   const [gateCompleted, setGateCompleted] = useState(false);
@@ -27,8 +31,18 @@ export default function KesfetPage() {
     setGateCompleted(hasCompletedGate());
   }, []);
 
+  // Redirect to emanetim if in refakatci mode
+  useEffect(() => {
+    if (mode === "refakatci") {
+      router.replace("/emanetim");
+    }
+  }, [mode, router]);
+
+  // Married users cannot access Keşfet
+  const isMarried = currentUser.marital_status === "evli";
+
   const baseCandidates = mockProfiles.filter(
-    (p) => p.gender !== currentUser.gender && p.id !== currentUser.id
+    (p) => p.gender !== currentUser.gender && p.id !== currentUser.id && p.marital_status === "bekar"
   );
 
   const cities = useMemo(
@@ -63,6 +77,29 @@ export default function KesfetPage() {
   const handleRequest = (id: string) => {
     setRequested((prev) => new Set(prev).add(id));
   };
+
+  if (isMarried) {
+    return (
+      <>
+        <Header title="Keşfet" />
+        <main className="max-w-lg mx-auto px-5 py-6">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto rounded-full bg-refakatci/10 flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-refakatci" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+            <h3 className="font-serif text-lg font-bold text-night mb-2">
+              Keşfet Kapalı
+            </h3>
+            <p className="text-sm text-night/50 font-sans">
+              Evli kullanıcılar profil keşfi yapamaz. Refakatçi moduna geçerek bir adaya rehberlik edebilirsiniz.
+            </p>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>

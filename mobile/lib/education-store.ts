@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "vesile_education_progress";
+const WATCHED_VIDEOS_KEY = "vesile_watched_videos";
 
 export interface LevelProgress {
   level: number;
@@ -10,12 +11,12 @@ export interface LevelProgress {
 }
 
 // Cache progress in memory to avoid async reads on every render
-let cachedProgress: LevelProgress[] | null = null;
+let cachedProgress: LevelProgress[] = [];
 
 export async function loadProgress(): Promise<LevelProgress[]> {
   try {
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
-    cachedProgress = stored ? JSON.parse(stored) : [];
+    cachedProgress = stored ? (JSON.parse(stored) as LevelProgress[]) : [];
     return cachedProgress;
   } catch {
     cachedProgress = [];
@@ -69,4 +70,37 @@ export async function completeLevel(level: number, quizScore: number): Promise<v
 
 export function hasCompletedGate(): boolean {
   return getCompletedLevel() >= 3;
+}
+
+// --- Video watch tracking ---
+let cachedWatchedVideos: Record<number, string[]> = {};
+
+export async function loadWatchedVideos(): Promise<void> {
+  try {
+    const stored = await AsyncStorage.getItem(WATCHED_VIDEOS_KEY);
+    cachedWatchedVideos = stored ? JSON.parse(stored) : {};
+  } catch {
+    cachedWatchedVideos = {};
+  }
+}
+
+export function getWatchedVideos(levelId: number): string[] {
+  return cachedWatchedVideos[levelId] || [];
+}
+
+export function isVideoUnlocked(levelId: number, videoIndex: number, contents: { id: string }[]): boolean {
+  if (videoIndex === 0) return true;
+  const watched = getWatchedVideos(levelId);
+  const prevVideo = contents[videoIndex - 1];
+  return prevVideo ? watched.includes(prevVideo.id) : false;
+}
+
+export async function markVideoWatched(levelId: number, contentId: string): Promise<void> {
+  const current = { ...cachedWatchedVideos };
+  if (!current[levelId]) current[levelId] = [];
+  if (!current[levelId].includes(contentId)) {
+    current[levelId] = [...current[levelId], contentId];
+  }
+  cachedWatchedVideos = current;
+  await AsyncStorage.setItem(WATCHED_VIDEOS_KEY, JSON.stringify(current));
 }

@@ -1,4 +1,11 @@
-import { Profile, EducationLevel, MatchRequest } from "./types";
+import {
+  Profile,
+  EducationLevel,
+  MatchRequest,
+  ChatRoom,
+  GuardianRelation,
+  KarneCategory,
+} from "./types";
 
 export const mockProfiles: Profile[] = [
   {
@@ -13,6 +20,7 @@ export const mockProfiles: Profile[] = [
     mezhep: "hanefi",
     namaz_regularity: "5 vakit düzenli",
     education_level: 3,
+    marital_status: "bekar",
     created_at: "2026-01-15T10:00:00Z",
   },
   {
@@ -27,6 +35,7 @@ export const mockProfiles: Profile[] = [
     mezhep: "hanefi",
     namaz_regularity: "5 vakit düzenli",
     education_level: 2,
+    marital_status: "bekar",
     created_at: "2026-02-01T10:00:00Z",
   },
   {
@@ -41,6 +50,7 @@ export const mockProfiles: Profile[] = [
     mezhep: "shafii",
     namaz_regularity: "5 vakit düzenli",
     education_level: 3,
+    marital_status: "bekar",
     created_at: "2026-02-10T10:00:00Z",
   },
   {
@@ -55,6 +65,7 @@ export const mockProfiles: Profile[] = [
     mezhep: "hanefi",
     namaz_regularity: "5 vakit düzenli",
     education_level: 1,
+    marital_status: "bekar",
     created_at: "2026-02-20T10:00:00Z",
   },
   {
@@ -69,6 +80,7 @@ export const mockProfiles: Profile[] = [
     mezhep: "hanefi",
     namaz_regularity: "5 vakit düzenli",
     education_level: 3,
+    marital_status: "bekar",
     created_at: "2026-01-20T10:00:00Z",
   },
   {
@@ -83,183 +95,343 @@ export const mockProfiles: Profile[] = [
     mezhep: "hanefi",
     namaz_regularity: "5 vakit düzenli",
     education_level: 2,
+    marital_status: "bekar",
     created_at: "2026-02-05T10:00:00Z",
+  },
+  {
+    id: "7",
+    full_name: "Hasan Bakır",
+    age: 55,
+    city: "İstanbul",
+    profession: "Emekli Öğretmen",
+    bio: "Oğlum Ahmed'in hayırlı bir eş bulmasına vesile olmak istiyorum.",
+    avatar_url: null,
+    gender: "male",
+    mezhep: "hanefi",
+    namaz_regularity: "5 vakit düzenli",
+    education_level: 3,
+    marital_status: "evli",
+    created_at: "2026-01-10T10:00:00Z",
+  },
+  {
+    id: "8",
+    full_name: "Hatice Yılmaz",
+    age: 50,
+    city: "İstanbul",
+    profession: "Ev Hanımı",
+    bio: "Kızım Fatma'nın huzurlu bir yuva kurması en büyük duam.",
+    avatar_url: null,
+    gender: "female",
+    mezhep: "hanefi",
+    namaz_regularity: "5 vakit düzenli",
+    education_level: 2,
+    marital_status: "evli",
+    created_at: "2026-01-12T10:00:00Z",
+  },
+  {
+    id: "9",
+    full_name: "Elif Şahin",
+    age: 23,
+    city: "Ankara",
+    profession: "Mimar",
+    bio: "Huzurlu, anlayışlı ve dini vecibelerini yerine getiren bir eş adayı arıyorum.",
+    avatar_url: null,
+    gender: "female",
+    mezhep: "hanefi",
+    namaz_regularity: "5 vakit düzenli",
+    education_level: 1,
+    marital_status: "bekar",
+    created_at: "2026-03-10T10:00:00Z",
+  },
+  {
+    id: "10",
+    full_name: "Sümeyye Çelik",
+    age: 29,
+    city: "Konya",
+    profession: "Akademisyen",
+    bio: "İlim yolunda birbirimize destek olabileceğimiz, İslami değerleri merkeze alan bir yuva hayal ediyorum.",
+    avatar_url: null,
+    gender: "female",
+    mezhep: "shafii",
+    namaz_regularity: "5 vakit düzenli",
+    education_level: 3,
+    marital_status: "bekar",
+    created_at: "2026-03-11T10:00:00Z",
+  },
+  {
+    id: "11",
+    full_name: "Tuğba Aydın",
+    age: 25,
+    city: "Bursa",
+    profession: "Psikolog",
+    bio: "İletişimin ve karşılıklı anlayışın güçlü olduğu, merhamet temelli bir evlilik niyetindeyim.",
+    avatar_url: null,
+    gender: "female",
+    mezhep: "hanefi",
+    namaz_regularity: "Genellikle",
+    education_level: 2,
+    marital_status: "bekar",
+    created_at: "2026-03-12T10:00:00Z",
+  },
+  {
+    id: "12",
+    full_name: "Kübra Yıldız",
+    age: 27,
+    city: "İstanbul",
+    profession: "Bankacı (Katılım Finans)",
+    bio: "Helal dairede, peygamber efendimizin sünnetine uygun bir aile kurmak en büyük gayem.",
+    avatar_url: null,
+    gender: "female",
+    mezhep: "hanefi",
+    namaz_regularity: "5 vakit düzenli",
+    education_level: 3,
+    marital_status: "bekar",
+    created_at: "2026-03-08T10:00:00Z",
+  },
+  {
+    id: "13",
+    full_name: "Zehra Kılıç",
+    age: 24,
+    city: "İzmir",
+    profession: "Diyetisyen",
+    bio: "Güvenilir, sadık ve samimi bir can yoldaşı arıyorum. Beraber ahiretimizi inşa edelim.",
+    avatar_url: null,
+    gender: "female",
+    mezhep: "maliki",
+    namaz_regularity: "5 vakit düzenli",
+    education_level: 2,
+    marital_status: "bekar",
+    created_at: "2026-03-05T10:00:00Z",
   },
 ];
 
-export const mockEducationLevels: EducationLevel[] = [
+export const currentUser: Profile = {
+  id: "5",
+  full_name: "Ahmed Bakır",
+  age: 30,
+  city: "İstanbul",
+  profession: "Yazılım Mühendisi",
+  bio: "Dinini yaşayan, hayatı birlikte inşa edebileceğim bir eş arıyorum.",
+  avatar_url: null,
+  gender: "male",
+  mezhep: "hanefi",
+  namaz_regularity: "5 vakit düzenli",
+  education_level: 0,
+  marital_status: "bekar",
+  created_at: "2026-01-20T10:00:00Z",
+};
+
+export const mockGuardianRelations: GuardianRelation[] = [
   {
-    id: 1,
-    title: "Evliliğin Önemi",
-    description: "İslam'da evliliğin yeri, hikmeti ve fazileti",
-    contents: [
-      {
-        id: "1-1",
-        type: "article",
-        title: "İslam'da Evliliğin Yeri",
-        body: `İslam dini, evliliği toplumun temel taşı olarak kabul eder. Peygamber Efendimiz (s.a.v.) "Nikâh benim sünnetimdir" buyurmuştur.\n\nEvlilik, insanın fıtratına en uygun yaşam biçimidir. Kur'an-ı Kerim'de "Kaynaşmanız için size kendi cinsinizden eşler yaratıp aranıza sevgi ve merhamet koyması, O'nun varlığının delillerindendir" (Rum, 21) buyurulmaktadır.\n\nEvliliğin faydaları:\n• Nefsin korunması\n• Neslin devamı\n• Huzur ve sükûnet\n• Karşılıklı destek ve yardımlaşma\n• Toplumsal düzenin korunması`,
-      },
-      {
-        id: "1-2",
-        type: "article",
-        title: "Eş Seçiminde Dikkat Edilecekler",
-        body: `Peygamber Efendimiz (s.a.v.) eş seçiminde dört özelliğe dikkat edilmesini tavsiye etmiştir: Malı, soyu, güzelliği ve dini.\n\n"Sen dindar olanı seç ki ellerin bereketlensin" buyurmuştur.\n\nEş seçiminde önemli kriterler:\n• Din ve ahlak anlayışı\n• Karakter uyumu\n• Ailelerin tanışması\n• İstişare ve istihareler\n• Karşılıklı rıza`,
-      },
-    ],
-    quiz: [
-      {
-        id: "q1-1",
-        question: "Peygamber Efendimiz nikâh hakkında ne buyurmuştur?",
-        options: [
-          "Nikâh benim sünnetimdir",
-          "Nikâh farz-ı ayındır",
-          "Nikâh vaciptir",
-          "Nikâh müstehaptır",
-        ],
-        correctIndex: 0,
-      },
-      {
-        id: "q1-2",
-        question: "Eş seçiminde en çok hangi özelliğe dikkat edilmelidir?",
-        options: ["Malı", "Güzelliği", "Soyu", "Dindarlığı"],
-        correctIndex: 3,
-      },
-    ],
+    id: "g1",
+    refakatci_id: "5",
+    aday_id: "6",
+    relation: "Arkadaş",
+    karne_responses: [],
+    karne_analysis: null,
+    created_at: "2026-02-01T10:00:00Z",
   },
-  {
-    id: 2,
-    title: "Mehir ve Nikâh Şartları",
-    description: "Nikâhın şartları, mehir ve düğün adabı",
-    contents: [
-      {
-        id: "2-1",
-        type: "article",
-        title: "Nikâhın Şartları",
-        body: `Nikâhın sahih olabilmesi için bazı şartların yerine getirilmesi gerekir:\n\n1. İcap ve Kabul: Tarafların karşılıklı rızası\n2. Şahitler: En az iki erkek veya bir erkek iki kadın şahit\n3. Veli İzni: Hanefî mezhebine göre akıl baliğ kadın kendi başına nikâhlanabilir, ancak velinin izni müstehaptır\n4. Mehir: Erkeğin kadına verdiği mal veya para\n\nNikâhın rükünleri:\n• Evlenecek taraflar\n• İcap (teklif)\n• Kabul (onay)`,
-      },
-      {
-        id: "2-2",
-        type: "article",
-        title: "Mehir ve Önemi",
-        body: `Mehir, erkeğin evlenirken kadına vermeyi taahhüt ettiği mal veya paradır. Kur'an-ı Kerim'de "Kadınlara mehirlerini gönül hoşluğuyla verin" (Nisa, 4) buyurulmaktadır.\n\nMehir türleri:\n• Mehr-i Muaccel: Nikâh anında peşin verilen\n• Mehr-i Müeccel: Sonraya bırakılan\n\nMehir miktarı:\n• Asgari bir sınır yoktur\n• Abartılı mehir talepleri hoş karşılanmaz\n• "En hayırlı nikâh, en kolay olanıdır" hadisi rehberdir`,
-      },
-    ],
-    quiz: [
-      {
-        id: "q2-1",
-        question: "Nikâhta en az kaç şahit bulunmalıdır?",
-        options: ["1 erkek", "2 erkek", "3 erkek", "4 erkek"],
-        correctIndex: 1,
-      },
-      {
-        id: "q2-2",
-        question: "Mehr-i Muaccel ne demektir?",
-        options: [
-          "Sonraya bırakılan mehir",
-          "Peşin verilen mehir",
-          "Mehir vermemek",
-          "Hediye vermek",
-        ],
-        correctIndex: 1,
-      },
-    ],
+];
+
+export const mockKarneAnalysis = {
+  boyutlar: {
+    durustukluk: {
+      puan: 8,
+      gerekce:
+        "Refakatçi, adayın sözlerine güvenilir biri olduğunu belirtiyor.",
+    },
+    sorumluluk: {
+      puan: 7,
+      gerekce:
+        "İş hayatında disiplinli, ancak zaman zaman erteleme eğilimi gösterdiği belirtilmiş.",
+    },
+    empati: {
+      puan: 9,
+      gerekce:
+        "Çevresindeki insanların duygularına karşı hassas ve yardımsever.",
+    },
+    dini_hassasiyet: {
+      puan: 8,
+      gerekce: "Namazlarına dikkat ediyor, Cuma namazlarını kaçırmıyor.",
+    },
+    sosyal_uyum: {
+      puan: 6,
+      gerekce:
+        "Küçük gruplarla iyi anlaşıyor ancak kalabalıkta çekingen.",
+    },
   },
+  ozet_portre:
+    "Mehmet, güvenilir ve empatik bir kişiliğe sahip. Dini değerlerine bağlı, iş hayatında disiplinli bir genç. Sosyal ortamlarda biraz çekingen olsa da yakın çevresinde çok sevilen biri.",
+  guclu_yonler: [
+    "Güçlü empati yeteneği",
+    "Dini hassasiyet",
+    "Güvenilirlik",
+  ],
+  dikkat_alanlari: [
+    "Sosyal ortamlarda çekingenlik",
+    "Zaman yönetimi",
+  ],
+};
+
+export const karneCategories: KarneCategory[] = [
   {
-    id: 3,
-    title: "Görüşme Usulü",
-    description: "İslami adaba uygun görüşme ve tanışma kuralları — GATE SEVİYESİ",
-    contents: [
+    id: "cat1",
+    title: "Çocukluk ve Mizaç",
+    description: "Adayın çocukluk dönemi ve temel karakter özellikleri",
+    questions: [
       {
-        id: "3-1",
-        type: "article",
-        title: "İslami Görüşme Adabı",
-        body: `Evlenme niyetiyle yapılan görüşmelerde İslami edeplere riayet edilmelidir:\n\n1. Niyet: Görüşme mutlaka evlilik niyetiyle yapılmalıdır\n2. Mahremiyet: Yalnız başına kalınmamalı, yanlarında bir mahrem bulunmalıdır\n3. Bakış: Helal dairede, ölçülü bakış\n4. Konuşma: Ciddi, saygılı ve amaca yönelik\n5. Süre: Görüşmeler gereksiz uzatılmamalıdır\n\nPeygamber Efendimiz (s.a.v.) buyurmuştur: "Biriniz bir kadınla evlenmek istediğinde, onu evliliğe teşvik eden tarafına bakabilirse baksın."`,
-      },
-      {
-        id: "3-2",
-        type: "article",
-        title: "Dijital Ortamda Görüşme Kuralları",
-        body: `Modern dijital ortamda da İslami edeplere uyulmalıdır:\n\n1. Mesajlaşma: Ölçülü ve amaca yönelik olmalı\n2. Mahrem Bilgi: Özel bilgiler paylaşılmamalı\n3. Fotoğraf: Uygun şekilde, veli bilgisi dahilinde\n4. Zaman: Gece geç saatlerde mesajlaşmaktan kaçınılmalı\n5. Moderatör: Platformda veli veya güvenilir kişi gözetiminde iletişim\n\nBu platformda 3 kişilik grup sistemi ile İslami görüşme adabı korunur.`,
-      },
-    ],
-    quiz: [
-      {
-        id: "q3-1",
+        id: "q1",
         question:
-          "İslami görüşme adabına göre görüşmede yanlarında kim bulunmalıdır?",
-        options: [
-          "Arkadaş",
-          "Mahrem (veli)",
-          "Hiç kimse",
-          "Komşu",
-        ],
-        correctIndex: 1,
+          "Adayı ne zamandır tanıyorsunuz? Onu en iyi tanımlayan 3 kelime nedir?",
+        type: "text",
       },
       {
-        id: "q3-2",
+        id: "q2",
         question:
-          "Bu platformdaki mesajlaşma sistemi nasıl çalışır?",
-        options: [
-          "İki kişilik özel sohbet",
-          "Toplu mesaj",
-          "3 kişilik grup (moderatör dahil)",
-          "Anonim mesajlaşma",
-        ],
-        correctIndex: 2,
+          "Çocukluğunda nasıl bir mizacı vardı? Zor durumlarla nasıl başa çıkardı?",
+        type: "text",
+      },
+      {
+        id: "q3",
+        question:
+          "Öfke kontrolü nasıldır? Stresli anlarda nasıl davranır?",
+        type: "text",
       },
     ],
   },
   {
-    id: 4,
-    title: "Aile Kurma Sorumluluğu",
-    description: "Aile reisi olmanın sorumlulukları ve karşılıklı haklar",
-    contents: [
+    id: "cat2",
+    title: "Mesleki Yetenekler",
+    description: "Adayın iş hayatı ve mesleki yetkinlikleri",
+    questions: [
       {
-        id: "4-1",
-        type: "article",
-        title: "Ailede Karşılıklı Haklar",
-        body: `İslam'da eşlerin birbirleri üzerinde hakları vardır:\n\nKocanın Hakları:\n• Meşru konularda itaat\n• Evin düzenini koruma\n• İffetini muhafaza\n\nKadının Hakları:\n• Nafaka (geçim)\n• İyi muamele\n• Eğitim ve gelişim hakkı\n• Mehir hakkı\n\nOrtak Sorumluluklar:\n• Çocukların terbiyesi\n• Karşılıklı saygı ve sevgi\n• İstişare ile karar alma`,
+        id: "q4",
+        question:
+          "Adayın mesleğindeki başarısını ve çalışma disiplinini nasıl değerlendirirsiniz?",
+        type: "text",
       },
-    ],
-    quiz: [
       {
-        id: "q4-1",
-        question: "Aşağıdakilerden hangisi kadının haklarından biridir?",
-        options: [
-          "Evin düzenini koruma",
-          "Nafaka (geçim)",
-          "Meşru konularda itaat",
-          "Hiçbiri",
-        ],
-        correctIndex: 1,
+        id: "q5",
+        question:
+          "Mali sorumluluklarını (borç, tasarruf, harcama) nasıl yönetir?",
+        type: "text",
       },
     ],
   },
   {
-    id: 5,
-    title: "Mutlu Evliliğin Sırları",
-    description: "Evlilikte iletişim, sabır ve şükür",
-    contents: [
+    id: "cat3",
+    title: "Fıkhi Hassasiyetler",
+    description: "Adayın dini yaşantısı ve hassasiyetleri",
+    questions: [
       {
-        id: "5-1",
-        type: "article",
-        title: "Evlilikte İletişim",
-        body: `Mutlu bir evliliğin temeli sağlıklı iletişimdir:\n\n• Dinlemeyi öğrenmek\n• Empati kurmak\n• Öfke anında susmak\n• Güzel söz söylemek\n• Takdir ve teşekkürü ihmal etmemek\n\nPeygamber Efendimiz (s.a.v.) eşlerine karşı güler yüzlü, nazik ve anlayışlı davranmıştır.`,
+        id: "q6",
+        question:
+          "Adayın namaz, oruç ve diğer ibadetlere düzenli devam durumu nedir?",
+        type: "text",
+      },
+      {
+        id: "q7",
+        question:
+          "Helal-haram hassasiyeti günlük hayatına ne ölçüde yansıyor?",
+        type: "text",
+      },
+      {
+        id: "q8",
+        question: "Dini bilgisini geliştirmek için neler yapıyor?",
+        type: "text",
       },
     ],
-    quiz: [
+  },
+  {
+    id: "cat4",
+    title: "Sosyal Vefa",
+    description: "Adayın sosyal ilişkileri ve vefa duygusu",
+    questions: [
       {
-        id: "q5-1",
-        question: "Evlilikte iletişimin en önemli unsuru nedir?",
-        options: [
-          "Her zaman haklı olmak",
-          "Dinlemeyi öğrenmek",
-          "Sessiz kalmak",
-          "Kararları tek başına almak",
-        ],
-        correctIndex: 1,
+        id: "q9",
+        question:
+          "Aile bağları nasıl? Anne-babası ve kardeşleriyle ilişkisi nasıl?",
+        type: "text",
+      },
+      {
+        id: "q10",
+        question: "Arkadaşlık ilişkilerinde ne kadar vefalıdır?",
+        type: "text",
+      },
+      {
+        id: "q11",
+        question:
+          "Komşuluk ve toplumsal yardımlaşma konusunda nasıl davranır?",
+        type: "text",
       },
     ],
+  },
+];
+
+export const mockChatRooms: ChatRoom[] = [
+  {
+    id: "room1",
+    aday1_id: "5",
+    aday2_id: "1",
+    refakatci_id: "7",
+    status: "active",
+    created_at: "2026-03-01T10:00:00Z",
+    messages: [
+      {
+        id: "m0",
+        room_id: "room1",
+        sender_id: "system",
+        sender_name: "Sistem",
+        content:
+          "Refakatçi Hasan Bakır odaya katıldı. Sohbet başlayabilir.",
+        is_system: true,
+        created_at: "2026-03-01T10:00:00Z",
+      },
+      {
+        id: "m1",
+        room_id: "room1",
+        sender_id: "5",
+        sender_name: "Ahmed",
+        content: "Selamün aleyküm Fatma Hanım, nasılsınız?",
+        created_at: "2026-03-01T10:01:00Z",
+      },
+      {
+        id: "m2",
+        room_id: "room1",
+        sender_id: "1",
+        sender_name: "Fatma",
+        content:
+          "Aleyküm selam Ahmed Bey, iyiyim elhamdülillah. Siz nasılsınız?",
+        created_at: "2026-03-01T10:02:00Z",
+      },
+      {
+        id: "m3",
+        room_id: "room1",
+        sender_id: "5",
+        sender_name: "Ahmed",
+        content:
+          "Elhamdülillah, iyiyim. Profilinizi inceledim, öğretmenlik mesleğini çok değerli buluyorum.",
+        created_at: "2026-03-01T10:03:00Z",
+      },
+      {
+        id: "m4",
+        room_id: "room1",
+        sender_id: "1",
+        sender_name: "Fatma",
+        content:
+          "Teşekkür ederim. Çocuklarla çalışmak benim için bir ibadet gibi. Siz de yazılım mühendisisiniz, mesleğinizi seviyor musunuz?",
+        created_at: "2026-03-01T10:05:00Z",
+      },
+    ],
+  },
+  {
+    id: "room2",
+    aday1_id: "5",
+    aday2_id: "3",
+    refakatci_id: null,
+    status: "waiting_refakatci",
+    created_at: "2026-03-05T10:00:00Z",
+    messages: [],
   },
 ];
 
@@ -287,18 +459,476 @@ export const mockRequests: MatchRequest[] = [
   },
 ];
 
-// Simulated current user (for demo)
-export const currentUser: Profile = {
-  id: "5",
-  full_name: "Ahmed Bakır",
-  age: 30,
-  city: "İstanbul",
-  profession: "Yazılım Mühendisi",
-  bio: "Dinini yaşayan, hayatı birlikte inşa edebileceğim bir eş arıyorum.",
-  avatar_url: null,
-  gender: "male",
-  mezhep: "hanefi",
-  namaz_regularity: "5 vakit düzenli",
-  education_level: 0,
-  created_at: "2026-01-20T10:00:00Z",
-};
+export const mockEducationLevels: EducationLevel[] = [
+  {
+    id: 1,
+    title: "Evliliğin Önemi ve Niyet",
+    description: "İslam'da evliliğin yeri, hikmeti ve fazileti",
+    contents: [
+      {
+        id: "1-v1",
+        type: "video",
+        title: "Evlilik Bir Tercih Değil, Bir Zarurettir",
+        url: "https://www.youtube.com/watch?v=iJtr25H4ufA",
+      },
+      {
+        id: "1-v2",
+        type: "video",
+        title: "Neden Evlenmeliyiz? Hikmetler ve Gayeler",
+        url: "https://www.youtube.com/watch?v=3A7Qyv-6AtQ",
+      },
+      {
+        id: "1-v3",
+        type: "video",
+        title: "Gençlik ve İffet Mücadelesinde Evliliğin Rolü",
+        url: "https://www.youtube.com/watch?v=Mh99yLNi3zk",
+      },
+    ],
+    quiz: [
+      {
+        id: "1-q1",
+        question: "İslam hukukuna göre evliliğin 'ibadet' sayılabilmesi için en temel şart hangisidir?",
+        options: [
+          "Düğün merasiminin gösterişli olması",
+          "İffeti koruma ve salih nesil yetiştirme niyeti",
+          "Maddi imkanların en üst seviyede olması",
+          "Ev eşyalarının eksiksiz olması",
+        ],
+        correctIndex: 1,
+        hint: "Ameller niyetlere göredir. Herkese ancak niyet ettiği şey vardır.",
+        source: "Buhârî, Bed'ü'l-vahy, 1",
+      },
+      {
+        id: "1-q2",
+        question: "Maddi imkansızlık bahanesiyle evliliği erteleyen bir genç neyi ihmal etmiş olur?",
+        options: [
+          "Kariyer fırsatlarını",
+          "Allah'ın vaadine olan tevekkülü",
+          "Kişisel özgürlüğünü",
+          "Sosyal çevresini",
+        ],
+        correctIndex: 1,
+        hint: "Eğer fakirseler, Allah onları lütfuyla zengin eder.",
+        source: "Nûr Suresi, 32",
+      },
+      {
+        id: "1-q3",
+        question: "Evlilik niyetinde 'nesil endişesi' taşımak neyi hedefler?",
+        options: [
+          "Çocuk sayısının çokluğunu",
+          "Miras bırakacak birini bulmayı",
+          "İslam ahlakıyla donanmış kaliteli bir nesil yetiştirmeyi",
+          "Çocukların sadece dünyevi kariyerlerini",
+        ],
+        correctIndex: 2,
+        hint: "Ölünce insanın ameli kesilir; ancak kendisine dua eden salih evlat müstesna.",
+        source: "Müslim, Vasiyye, 14",
+      },
+      {
+        id: "1-q4",
+        question: "Evlenmek hangi durumda 'farz' derecesine çıkar?",
+        options: [
+          "Yaş 30'u geçtiğinde",
+          "Harama düşme ihtimali kesinleştiğinde",
+          "Aile baskısı arttığında",
+          "Maddi birikim tamamlandığında",
+        ],
+        correctIndex: 1,
+        hint: "Kimin evlenmeye gücü yetiyorsa evlensin. Çünkü evlilik gözü haramdan sakındırır.",
+        source: "Buhârî, Nikâh, 3",
+      },
+      {
+        id: "1-q5",
+        question: "İslam'da bekarlık hali nasıl değerlendirilir?",
+        options: [
+          "Saltanattır",
+          "Dinin yarısından mahrum bir korunmasızlık halidir",
+          "Tercihe bağlı üstünlüktür",
+          "Sadece yaşlılıkta zordur",
+        ],
+        correctIndex: 1,
+        hint: "Kul evlendiği vakit, dininin yarısını tamamlamış olur.",
+        source: "Beyhakî, Şuabü'l-Îmân, 5486",
+      },
+    ],
+  },
+  {
+    id: 2,
+    title: "Mehir, Nikâh ve Düğün Adabı",
+    description: "Nikâhın şartları, mehir ve düğün adabı",
+    contents: [
+      {
+        id: "2-v1",
+        type: "video",
+        title: "Nikâhın Rükünleri ve Şartları",
+        url: "https://www.youtube.com/watch?v=3A7Qyv-6AtQ",
+      },
+      {
+        id: "2-v2",
+        type: "video",
+        title: "Mehir: Kadının Güvencesi",
+        url: "https://www.youtube.com/watch?v=cKf4YluMOAg",
+      },
+      {
+        id: "2-v3",
+        type: "video",
+        title: "Düğünlerdeki İsraf ve Yanlış Adetler",
+        url: "https://www.youtube.com/watch?v=Mh99yLNi3zk",
+      },
+    ],
+    quiz: [
+      {
+        id: "2-q1",
+        question: "Mehir miktarı belirlenirken temel ölçü ne olmalıdır?",
+        options: [
+          "Çok yüksek olmalı",
+          "Erkeği zorlamayacak makul bir miktar",
+          "Sembolik olmalı",
+          "Akrabaların kararı olmalı",
+        ],
+        correctIndex: 1,
+        hint: "Nikâhın en hayırlısı, külfeti en az olanıdır.",
+        source: "Ebû Dâvûd, Nikâh, 32",
+      },
+      {
+        id: "2-q2",
+        question: "Nikâhın ilan edilmesinin (gizli kalmamasının) amacı nedir?",
+        options: [
+          "Takı toplamak",
+          "Nesebin ve kadının haklarının korunması",
+          "Resmi evrak işleri",
+          "Şov yapmak",
+        ],
+        correctIndex: 1,
+        hint: "Nikâhı ilan edin, onu mescitlerde yapın.",
+        source: "Tirmizî, Nikâh, 6",
+      },
+      {
+        id: "2-q3",
+        question: "Düğünlerdeki israfın sınırı nedir?",
+        options: [
+          "Yemek ikramı",
+          "Gösteriş amaçlı ve geleceği borçlandıran harcamalar",
+          "Davetli sayısı",
+          "Müzik kullanımı",
+        ],
+        correctIndex: 1,
+        hint: "Yiyin, için, giyinin; ancak israfa ve kibre kaçmayın.",
+        source: "Buhârî, Libâs, 1",
+      },
+      {
+        id: "2-q4",
+        question: "Ertelenmiş mehir (Müeccel) ne zaman erkeğin üzerine borç olur?",
+        options: [
+          "Hiçbir zaman",
+          "Erkek istediğinde",
+          "Boşanma, ölüm veya kadının talebinde",
+          "Çocuk olduğunda",
+        ],
+        correctIndex: 2,
+        hint: "Kadınlara mehirlerini gönül rızasıyla verin.",
+        source: "Nisâ Suresi, 4",
+      },
+      {
+        id: "2-q5",
+        question: "Düğünlerde mahremiyet sınırı neyi ifade eder?",
+        options: [
+          "Kimsenin çağrılmamasını",
+          "Kadın ve erkeğin harama girmeden eğlendiği ortamı",
+          "Fotoğraf yasağını",
+          "Sadece akraba katılımını",
+        ],
+        correctIndex: 1,
+        hint: "Mü'min erkeklere ve kadınlara söyle, gözlerini haramdan sakınsınlar.",
+        source: "Nûr Suresi, 30-31",
+      },
+    ],
+  },
+  {
+    id: 3,
+    title: "Görüşme Usulü",
+    description: "İslami adaba uygun görüşme ve tanışma kuralları — GATE SEVİYESİ",
+    contents: [
+      {
+        id: "3-v1",
+        type: "video",
+        title: "Görüşme Odasında Neler Konuşulur?",
+        url: "https://www.youtube.com/watch?v=3A7Qyv-6AtQ",
+      },
+      {
+        id: "3-v2",
+        type: "video",
+        title: "Adaylarda Aranacak 3 Temel Özellik",
+        url: "https://www.youtube.com/watch?v=iJtr25H4ufA",
+      },
+      {
+        id: "3-v3",
+        type: "video",
+        title: "Nişanlılık Dönemi Hataları",
+        url: "https://www.youtube.com/watch?v=Mh99yLNi3zk",
+      },
+    ],
+    quiz: [
+      {
+        id: "3-q1",
+        question: "Görüşmelerde 'halvet' yasağının sınırı nedir?",
+        options: [
+          "Bakışmak",
+          "Başkası görmeyecek şekilde baş başa kalmak",
+          "Telefonlaşmak",
+          "Mesajlaşmak",
+        ],
+        correctIndex: 1,
+        hint: "Bir erkek, yanında mahremi olmayan kadınla baş başa kalmasın.",
+        source: "Müslim, Hac, 424",
+      },
+      {
+        id: "3-q2",
+        question: "Görüşmeden sadece mesajla evlilik kararı neden risklidir?",
+        options: [
+          "Yavaş ilerler",
+          "Mizaç uyumunu ve simayı görmeyi engellediği için",
+          "Kontör biter",
+          "Aileler kızar",
+        ],
+        correctIndex: 1,
+        hint: "Evlenmek istediğiniz kadının sizi evliliğe sevk edecek bölgelerine (yüzüne) bakın.",
+        source: "Ebû Dâvûd, Nikâh, 18",
+      },
+      {
+        id: "3-q3",
+        question: "İstiharede asıl belirleyici olan nedir?",
+        options: [
+          "Renk görmek",
+          "Kalpteki ferahlık ve işlerin kolaylaşması",
+          "Rakamlar",
+          "Başkasının rüyası",
+        ],
+        correctIndex: 1,
+        hint: "Allahım! Bu iş dinim ve dünyam için hayırlı ise onu bana kolaylaştır.",
+        source: "Buhârî, Teheccüd, 25",
+      },
+      {
+        id: "3-q4",
+        question: "Görüşmede 'yalan söylemek' hangi kapsama girer?",
+        options: [
+          "Basit hata",
+          "Aldatma (Gışş) ve güven yıkımı",
+          "Beyaz yalan",
+          "Strateji",
+        ],
+        correctIndex: 1,
+        hint: "Bizi aldatan, bizden değildir.",
+        source: "Müslim, Îmân, 164",
+      },
+      {
+        id: "3-q5",
+        question: "Veli haberdar olmadan yapılan görüşmelerin riski nedir?",
+        options: [
+          "Pazarlık yapılamaz",
+          "Kızın suistimal edilmesi ve tecrübe eksikliği",
+          "Süre uzar",
+          "Düğün olmaz",
+        ],
+        correctIndex: 1,
+        hint: "Veli ve iki adil şahit olmadan nikâh geçerli değildir.",
+        source: "Ebû Dâvûd, Nikâh, 19",
+      },
+    ],
+  },
+  {
+    id: 4,
+    title: "Aile Kurma ve Roller",
+    description: "Aile reisi olmanın sorumlulukları ve karşılıklı haklar",
+    contents: [
+      {
+        id: "4-v1",
+        type: "video",
+        title: "Kavvam Olmak: Erkeğin Liderliği",
+        url: "https://www.youtube.com/watch?v=cKf4YluMOAg",
+      },
+      {
+        id: "4-v2",
+        type: "video",
+        title: "Saliha Kadının Evdeki Rolü",
+        url: "https://www.youtube.com/watch?v=Mh99yLNi3zk",
+      },
+      {
+        id: "4-v3",
+        type: "video",
+        title: "Ailelerin Müdahalesi Nereye Kadar?",
+        url: "https://www.youtube.com/watch?v=iJtr25H4ufA",
+      },
+    ],
+    quiz: [
+      {
+        id: "4-q1",
+        question: "Erkeğin 'Kavvam' olması ne anlama gelir?",
+        options: [
+          "Sertlik yetkisi",
+          "Yönetme, koruma ve geçim sorumluluğu",
+          "Her kararı tek alma hakkı",
+          "Evden uzak durma",
+        ],
+        correctIndex: 1,
+        hint: "Erkekler, kadınlar üzerinde kavvâmdır (koruyucudur).",
+        source: "Nisâ Suresi, 34",
+      },
+      {
+        id: "4-q2",
+        question: "Kadının kocasına itaati hangi durumda geçerli değildir?",
+        options: [
+          "Maddi isteklerde",
+          "Allah'ın emrine aykırı bir istek olduğunda",
+          "Keyfi durumlarda",
+          "Ailesi istemediğinde",
+        ],
+        correctIndex: 1,
+        hint: "Allah'a isyan olan konuda kula itaat edilmez.",
+        source: "Müslim, İmâre, 39",
+      },
+      {
+        id: "4-q3",
+        question: "Eşlerin birbirine sadakati neleri kapsar?",
+        options: [
+          "Sadece fiziksel sadakat",
+          "Duygusal bağ, sır saklama ve onur koruma",
+          "Şifre paylaşımı",
+          "Aynı evde durma",
+        ],
+        correctIndex: 1,
+        hint: "Onurlar sizin için bir elbise, siz de onlar için bir elbisesiniz.",
+        source: "Bakara Suresi, 187",
+      },
+      {
+        id: "4-q4",
+        question: "Eşlerin ailelerine karşı duruşu nasıl olmalıdır?",
+        options: [
+          "Bağları koparmalı",
+          "Hürmet etmeli ama çekirdek ailenin mahremiyetini korumalı",
+          "Her şeyi sormalı",
+          "Mesafe koymalı",
+        ],
+        correctIndex: 1,
+        hint: "Büyüklerimize saygı göstermeyen bizden değildir.",
+        source: "Tirmizî, Birr, 15",
+      },
+      {
+        id: "4-q5",
+        question: "Ev işleri sadece kadının görevi midir?",
+        options: [
+          "Evet",
+          "Hayır, sorumluluklar paylaşılmalıdır",
+          "Kadın çalışmıyorsa evet",
+          "Erkek isterse evet",
+        ],
+        correctIndex: 1,
+        hint: "Peygamber Efendimiz evde ailesinin işlerine yardım ederdi.",
+        source: "Buhârî, Ezan, 44",
+      },
+    ],
+  },
+  {
+    id: 5,
+    title: "Mutlu Evliliğin Sırları",
+    description: "Evlilikte iletişim, sabır ve şükür",
+    contents: [
+      {
+        id: "5-v1",
+        type: "video",
+        title: "Evlilikte İlk Bir Yılın Önemi",
+        url: "https://www.youtube.com/watch?v=cKf4YluMOAg",
+      },
+      {
+        id: "5-v2",
+        type: "video",
+        title: "Mutlu Evlilik İçin 11 Altın Kural",
+        url: "https://www.youtube.com/watch?v=Mh99yLNi3zk",
+      },
+      {
+        id: "5-v3",
+        type: "video",
+        title: "Boşanmaya Götüren Sebepler",
+        url: "https://www.youtube.com/watch?v=iJtr25H4ufA",
+      },
+    ],
+    quiz: [
+      {
+        id: "5-q1",
+        question: "Tartışma anında Müslüman edebi nasıldır?",
+        options: [
+          "Ses yükseltmek",
+          "Ses yükseltmemek ve hakaret etmemek",
+          "Küsmek",
+          "Eski hataları açmak",
+        ],
+        correctIndex: 1,
+        hint: "Mü'min; kötü söz söyleyen ve lanetleyen biri değildir.",
+        source: "Tirmizî, Birr, 48",
+      },
+      {
+        id: "5-q2",
+        question: "Özel mahremiyetin dışarıya anlatılmasının sonucu nedir?",
+        options: [
+          "Arkadaşlık pekişir",
+          "Emanete hıyanet ve büyük günahtır",
+          "Nazar değer",
+          "Deşarj olunur",
+        ],
+        correctIndex: 1,
+        hint: "Kıyamet günü konumu en kötü olan, eşinin sırrını yayandır.",
+        source: "Müslim, Nikâh, 123",
+      },
+      {
+        id: "5-q3",
+        question: "Evlilikte sabır ne demektir?",
+        options: [
+          "Boyun eğmek",
+          "Zorlukları birlikte aşmak ve fevri olmamak",
+          "Sadece erkeğin susması",
+          "Boşanmayı beklemek",
+        ],
+        correctIndex: 1,
+        hint: "Hoşlanmadığınız bir huyun yanında memnun kalacağınız bir huy mutlaka vardır.",
+        source: "Müslim, Radâ, 61",
+      },
+      {
+        id: "5-q4",
+        question: "Eşlerin birbirine teşekkür etmesi neyi ifade eder?",
+        options: [
+          "Nezaket",
+          "Nimetin şükrü ve vefa borcu",
+          "Şımartma",
+          "Formalite",
+        ],
+        correctIndex: 1,
+        hint: "İnsanlara teşekkür etmeyen, Allah'a da şükretmiş olmaz.",
+        source: "Tirmizî, Birr, 35",
+      },
+      {
+        id: "5-q5",
+        question: "Çözülemeyen krizlerde Kur'an'ın tavsiyesi nedir?",
+        options: [
+          "Hemen boşanmak",
+          "Ailelerden hakem tayin etmek",
+          "Mahkemeye gitmek",
+          "Herkesi karıştırmak",
+        ],
+        correctIndex: 1,
+        hint: "Aranın açılmasından korkarsanız, her iki aileden birer hakem gönderin.",
+        source: "Nisâ Suresi, 35",
+      },
+    ],
+  },
+];
+
+export function resolveChatRoom(room: ChatRoom): ChatRoom {
+  return {
+    ...room,
+    aday1: mockProfiles.find((p) => p.id === room.aday1_id),
+    aday2: mockProfiles.find((p) => p.id === room.aday2_id),
+    refakatci: room.refakatci_id
+      ? mockProfiles.find((p) => p.id === room.refakatci_id)
+      : undefined,
+  };
+}
