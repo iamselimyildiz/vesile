@@ -19,7 +19,9 @@ export interface Profile {
   namaz_regularity: string;
   education_level: number;
   marital_status: MaritalStatus;
+  hardware_id?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface MatchRequest {
